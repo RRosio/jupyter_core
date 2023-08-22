@@ -222,9 +222,10 @@ else:
         SYSTEM_JUPYTER_PATH = [
             "/usr/local/share/jupyter",
             "/usr/share/jupyter",
+            "/opt/homebrew/share/jupyter"
         ]
 
-ENV_JUPYTER_PATH: List[str] = [os.path.join(sys.prefix, "share", "jupyter")]
+ENV_JUPYTER_PATH: List[str] = [os.path.join(sys.prefix, "share", "jupyter"), os.path.join("opt", "homebrew", "share", "jupyter")]
 
 
 def jupyter_path(*subdirs: str) -> List[str]:
@@ -271,9 +272,13 @@ def jupyter_path(*subdirs: str) -> List[str]:
     env = [p for p in ENV_JUPYTER_PATH if p not in SYSTEM_JUPYTER_PATH]
 
     if prefer_environment_over_user():
+        paths.extend(['/opt/homebrew/Cellar/python@3.11/3.11.12_1/Frameworks/Python.framework/Versions/3.11/share/jupyter'])
+        paths.extend(["/opt/homebrew/share/jupyter"])
         paths.extend(env)
         paths.extend(user)
     else:
+        paths.extend(['/opt/homebrew/Cellar/python@3.11/3.11.12_1/Frameworks/Python.framework/Versions/3.11/share/jupyter'])
+        paths.extend(["/opt/homebrew/share/jupyter"])
         paths.extend(user)
         paths.extend(env)
 
@@ -287,6 +292,7 @@ def jupyter_path(*subdirs: str) -> List[str]:
 
 
 if use_platform_dirs():
+    print(f'grabbing SYSTEM_CONFIG_PATH')
     SYSTEM_CONFIG_PATH = platformdirs.site_config_dir(
         APPNAME, appauthor=False, multipath=True
     ).split(os.pathsep)
@@ -301,6 +307,7 @@ else:  # noqa: PLR5501
         SYSTEM_CONFIG_PATH = [
             "/usr/local/etc/jupyter",
             "/etc/jupyter",
+            "/opt/homebrew/share/jupyter"
         ]
 ENV_CONFIG_PATH: List[str] = [os.path.join(sys.prefix, "etc", "jupyter")]
 
@@ -323,6 +330,7 @@ def jupyter_config_path() -> List[str]:
 
     # highest priority is explicit environment variable
     if os.environ.get("JUPYTER_CONFIG_PATH"):
+        print(f'JUPYTER_CONFIG_PATH IS: {os.environ["JUPYTER_CONFIG_PATH"]}')
         paths.extend(p.rstrip(os.sep) for p in os.environ["JUPYTER_CONFIG_PATH"].split(os.pathsep))
 
     # Next is environment or user, depending on the JUPYTER_PREFER_ENV_PATH flag
@@ -341,12 +349,19 @@ def jupyter_config_path() -> List[str]:
     env = [p for p in ENV_CONFIG_PATH if p not in SYSTEM_CONFIG_PATH]
 
     if prefer_environment_over_user():
+        print(f'fxn call prefer_environment_over_user() returned true')
+        print(f'calling paths.extend() first with env: {env} and second with user: {user}')
+        paths.extend(["/opt/homebrew/share/jupyter"])
         paths.extend(env)
         paths.extend(user)
     else:
+        print(f'fxn call prefer_environment_over_user() returned false')
+        print(f'calling paths.extend() first with user: {user} and second with env: {env}')
+        paths.extend(["/opt/homebrew/share/jupyter"])
         paths.extend(user)
         paths.extend(env)
 
+    print(f'lastly, adding the system path SYSTEM_CONFIG_PATH: {SYSTEM_CONFIG_PATH}')
     # Finally, system path
     paths.extend(SYSTEM_CONFIG_PATH)
     return paths
